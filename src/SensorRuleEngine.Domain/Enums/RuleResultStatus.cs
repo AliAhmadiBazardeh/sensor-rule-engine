@@ -1,6 +1,7 @@
 namespace SensorRuleEngine.Domain.Enums;
 
-public class RuleResultStatus
+public enum RuleResultStatus
 {
-    
+    Satisfied,
+    Violated
 }

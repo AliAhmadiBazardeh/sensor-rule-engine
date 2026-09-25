@@ -1,6 +1,12 @@
 namespace SensorRuleEngine.Domain.Enums;
 
-public class RuleOperatorType
+public enum RuleOperatorType
 {
-    
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    Equal,
+    Between,
+    SustainedAbove
 }

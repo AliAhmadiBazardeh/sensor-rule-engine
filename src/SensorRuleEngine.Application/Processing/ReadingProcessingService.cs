@@ -1,3 +1,4 @@
+using SensorRuleEngine.Domain.Alerting;
 using SensorRuleEngine.Domain.Classification;
 using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
@@ -13,15 +14,21 @@ public sealed class ReadingProcessingService
     private readonly IRuleEvaluationService _ruleEvaluationService;
     private readonly IReadingClassificationService _classificationService;
     private readonly ISustainedAboveProcessor _sustainedAboveProcessor;
+    private readonly AlertCooldownPolicy _alertCooldownPolicy;
+    private readonly AlertDeduplicator _alertDeduplicator;
 
     public ReadingProcessingService(
         IRuleEvaluationService ruleEvaluationService,
         IReadingClassificationService classificationService,
-        ISustainedAboveProcessor sustainedAboveProcessor)
+        ISustainedAboveProcessor sustainedAboveProcessor,
+        AlertCooldownPolicy alertCooldownPolicy,
+        AlertDeduplicator alertDeduplicator)
     {
         _ruleEvaluationService = ruleEvaluationService;
         _classificationService = classificationService;
         _sustainedAboveProcessor = sustainedAboveProcessor;
+        _alertCooldownPolicy = alertCooldownPolicy;
+        _alertDeduplicator = alertDeduplicator;
     }
 
     public ReadingProcessingResult Process(
@@ -70,13 +77,15 @@ public sealed class ReadingProcessingService
 
                 if (alert is not null)
                 {
-                    alerts.Add(alert);
+                    TryAddAlert(alert, alerts);
                 }
             }
         }
 
-        alerts.AddRange(
-            _sustainedAboveProcessor.Complete());
+        foreach (var alert in _sustainedAboveProcessor.Complete())
+        {
+            TryAddAlert(alert, alerts);
+        }
 
         return new ReadingProcessingResult
         {
@@ -84,6 +93,24 @@ public sealed class ReadingProcessingService
             Classifications = classifications,
             Alerts = alerts
         };
+    }
+    private void TryAddAlert(
+        Alert alert,
+        List<Alert> alerts)
+    {
+        if (!_alertDeduplicator.TryAdd(alert))
+        {
+            return;
+        }
+
+        if (!_alertCooldownPolicy.ShouldEmit(
+                alert,
+                alerts))
+        {
+            return;
+        }
+
+        alerts.Add(alert);
     }
 
     private static bool IsApplicable(

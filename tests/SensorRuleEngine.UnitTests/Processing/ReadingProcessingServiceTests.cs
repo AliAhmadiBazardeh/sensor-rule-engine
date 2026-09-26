@@ -1,4 +1,5 @@
 using SensorRuleEngine.Application.Processing;
+using SensorRuleEngine.Domain.Alerting;
 using SensorRuleEngine.Domain.Classification;
 using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
@@ -228,7 +229,10 @@ public sealed class ReadingProcessingServiceTests
                         new BetweenOperator()
                     })),
             new ReadingClassificationService(),
-            new SustainedAboveProcessor());
+            new SustainedAboveProcessor(),
+            new AlertCooldownPolicy(
+                TimeSpan.FromMinutes(5)),
+            new AlertDeduplicator());
     }
 
     private static SensorReading CreateReading(

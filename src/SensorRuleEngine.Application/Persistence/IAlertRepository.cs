@@ -4,7 +4,7 @@ namespace SensorRuleEngine.Application.Persistence;
 
 public interface IAlertRepository
 {
-    Task<bool> AddAsync(
+    Task AddAsync(
         Alert alert,
         CancellationToken cancellationToken = default);
 }

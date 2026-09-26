@@ -15,7 +15,7 @@ public sealed class ReadingRepository : IReadingRepository
         _dbContext = dbContext;
     }
 
-    public async Task<bool> AddAsync(
+    public async Task AddAsync(
         SensorReading reading,
         CancellationToken cancellationToken = default)
     {
@@ -24,21 +24,5 @@ public sealed class ReadingRepository : IReadingRepository
         await _dbContext.Readings.AddAsync(
             entity,
             cancellationToken);
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
-
-            return true;
-        }
-        catch (DbUpdateException exception)
-            when (exception.IsUniqueConstraintViolation())
-        {
-            _dbContext.Entry(entity).State =
-                EntityState.Detached;
-
-            return false;
-        }
     }
 }

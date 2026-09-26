@@ -15,7 +15,7 @@ public sealed class AlertRepository : IAlertRepository
         _dbContext = dbContext;
     }
 
-    public async Task<bool> AddAsync(
+    public async Task AddAsync(
         Alert alert,
         CancellationToken cancellationToken = default)
     {
@@ -24,21 +24,6 @@ public sealed class AlertRepository : IAlertRepository
         await _dbContext.Alerts.AddAsync(
             entity,
             cancellationToken);
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
-
-            return true;
-        }
-        catch (DbUpdateException exception)
-            when (exception.IsUniqueConstraintViolation())
-        {
-            _dbContext.Entry(entity).State =
-                EntityState.Detached;
-
-            return false;
-        }
+        
     }
 }

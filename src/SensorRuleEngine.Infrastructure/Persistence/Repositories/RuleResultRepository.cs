@@ -16,9 +16,8 @@ public sealed class RuleResultRepository
         _dbContext = dbContext;
     }
 
-    public async Task<bool> AddAsync(
+    public async Task AddAsync(
         RuleResult result,
-        SensorReading reading,
         CancellationToken cancellationToken = default)
     {
         var entity = RuleResultMapper.ToEntity(result);
@@ -26,21 +25,5 @@ public sealed class RuleResultRepository
         await _dbContext.RuleResults.AddAsync(
             entity,
             cancellationToken);
-
-        try
-        {
-            await _dbContext.SaveChangesAsync(
-                cancellationToken);
-
-            return true;
-        }
-        catch (DbUpdateException exception)
-            when (exception.IsUniqueConstraintViolation())
-        {
-            _dbContext.Entry(entity).State =
-                EntityState.Detached;
-
-            return false;
-        }
     }
 }

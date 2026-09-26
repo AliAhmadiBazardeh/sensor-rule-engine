@@ -4,8 +4,7 @@ namespace SensorRuleEngine.Application.Persistence;
 
 public interface IRuleResultRepository
 {
-    Task<bool> AddAsync(
+    Task AddAsync(
         RuleResult result,
-        SensorReading reading,
         CancellationToken cancellationToken = default);
 }

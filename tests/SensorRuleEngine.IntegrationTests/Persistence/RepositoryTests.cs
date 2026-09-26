@@ -42,9 +42,13 @@ public sealed class RepositoryTests
             Sequence = 1
         };
 
-        var added = await repository.AddAsync(reading);
+        await repository.AddAsync(reading);
 
-        Assert.True(added);
+        await dbContext.SaveChangesAsync();
+
+        var persisted = await dbContext.Readings.SingleAsync();
+
+        Assert.Equal(reading.DeviceId, persisted.DeviceId);
 
         var storedReading =
             await dbContext.Readings.SingleAsync();
@@ -68,51 +72,6 @@ public sealed class RepositoryTests
         Assert.Equal(
             reading.Sequence,
             storedReading.Sequence);
-    }
-
-    [Fact]
-    public async Task ReadingRepository_ShouldReturnFalseForDuplicate()
-    {
-        await using var connection =
-            new SqliteConnection("Data Source=:memory:");
-
-        await connection.OpenAsync();
-
-        var options =
-            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-        await using var dbContext =
-            new SensorRuleEngineDbContext(options);
-
-        await dbContext.Database.MigrateAsync();
-
-        var repository =
-            new ReadingRepository(dbContext);
-
-        var reading = new SensorReading
-        {
-            DeviceId = "device-1",
-            Metric = "temperature",
-            Timestamp = DateTimeOffset.Parse(
-                "2026-01-01T10:00:00Z"),
-            Value = 75,
-            Sequence = 1
-        };
-
-        var firstResult =
-            await repository.AddAsync(reading);
-
-        var secondResult =
-            await repository.AddAsync(reading);
-
-        Assert.True(firstResult);
-        Assert.False(secondResult);
-
-        Assert.Equal(
-            1,
-            await dbContext.Readings.CountAsync());
     }
     
     [Fact]
@@ -157,14 +116,12 @@ public sealed class RepositoryTests
             Status = RuleResultStatus.Violated,
             Reason = "Temperature exceeded threshold."
         };
+        
+        await repository.AddAsync(
+            result);
 
-        var added =
-            await repository.AddAsync(
-                result,
-                reading);
-
-        Assert.True(added);
-
+        await dbContext.SaveChangesAsync();
+        
         var storedResult =
             await dbContext.RuleResults.SingleAsync();
 
@@ -195,67 +152,6 @@ public sealed class RepositoryTests
         Assert.Equal(
             result.Reason,
             storedResult.Reason);
-    }
-    
-    [Fact]
-    public async Task RuleResultRepository_ShouldReturnFalseForDuplicate()
-    {
-        await using var connection =
-            new SqliteConnection("Data Source=:memory:");
-
-        await connection.OpenAsync();
-
-        var options =
-            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-        await using var dbContext =
-            new SensorRuleEngineDbContext(options);
-
-        await dbContext.Database.MigrateAsync();
-
-        var repository =
-            new RuleResultRepository(dbContext);
-
-        var reading = new SensorReading
-        {
-            DeviceId = "device-1",
-            Metric = "temperature",
-            Timestamp = DateTimeOffset.Parse(
-                "2026-01-01T10:00:00Z"),
-            Value = 85,
-            Sequence = 1
-        };
-
-        var result = new RuleResult
-        {
-            RuleId = "rule-1",
-            ReadingKey = new ReadingKey(
-                reading.DeviceId,
-                reading.Metric,
-                reading.Timestamp,
-                reading.Sequence),
-            Status = RuleResultStatus.Violated,
-            Reason = "Temperature exceeded threshold."
-        };
-
-        var firstResult =
-            await repository.AddAsync(
-                result,
-                reading);
-
-        var secondResult =
-            await repository.AddAsync(
-                result,
-                reading);
-
-        Assert.True(firstResult);
-        Assert.False(secondResult);
-
-        Assert.Equal(
-            1,
-            await dbContext.RuleResults.CountAsync());
     }
     
     [Fact]
@@ -291,10 +187,13 @@ public sealed class RepositoryTests
             PeakValue = 95
         };
 
-        var added =
-            await repository.AddAsync(alert);
+        await repository.AddAsync(alert);
 
-        Assert.True(added);
+        await dbContext.SaveChangesAsync();
+
+        var persisted = await dbContext.Alerts.SingleAsync();
+
+        Assert.Equal(alert.DeviceId, persisted.DeviceId);
 
         var storedAlert =
             await dbContext.Alerts.SingleAsync();
@@ -323,51 +222,5 @@ public sealed class RepositoryTests
             alert.PeakValue,
             storedAlert.PeakValue);
     }
-    
-    [Fact]
-    public async Task AlertRepository_ShouldReturnFalseForDuplicate()
-    {
-        await using var connection =
-            new SqliteConnection("Data Source=:memory:");
-
-        await connection.OpenAsync();
-
-        var options =
-            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-        await using var dbContext =
-            new SensorRuleEngineDbContext(options);
-
-        await dbContext.Database.MigrateAsync();
-
-        var repository =
-            new AlertRepository(dbContext);
-
-        var alert = new Alert
-        {
-            RuleId = "rule-1",
-            DeviceId = "device-1",
-            Metric = "temperature",
-            StartTimestamp = DateTimeOffset.Parse(
-                "2026-01-01T10:00:00Z"),
-            EndTimestamp = DateTimeOffset.Parse(
-                "2026-01-01T10:05:00Z"),
-            PeakValue = 95
-        };
-
-        var firstResult =
-            await repository.AddAsync(alert);
-
-        var secondResult =
-            await repository.AddAsync(alert);
-
-        Assert.True(firstResult);
-        Assert.False(secondResult);
-
-        Assert.Equal(
-            1,
-            await dbContext.Alerts.CountAsync());
-    }
+   
 }

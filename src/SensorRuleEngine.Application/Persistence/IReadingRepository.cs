@@ -4,7 +4,7 @@ namespace SensorRuleEngine.Application.Persistence;
 
 public interface IReadingRepository
 {
-    Task<bool> AddAsync(
+    Task AddAsync(
         SensorReading reading,
         CancellationToken cancellationToken = default);
 }

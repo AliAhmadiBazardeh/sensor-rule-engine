@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using SensorRuleEngine.Application.Persistence;
 using SensorRuleEngine.Infrastructure.Persistence.Entities;
 
 namespace SensorRuleEngine.Infrastructure.Persistence;
 
 public sealed class SensorRuleEngineDbContext
-    : DbContext
+    : DbContext, IUnitOfWork
 {
     public SensorRuleEngineDbContext(
         DbContextOptions<SensorRuleEngineDbContext> options)

@@ -17,16 +17,20 @@ public sealed class ReadingProcessingService
     private readonly AlertCooldownPolicy _alertCooldownPolicy;
     private readonly AlertDeduplicator _alertDeduplicator;
 
+    private readonly IRuleApplicabilityChecker _applicabilityChecker;
+
     public ReadingProcessingService(
         IRuleEvaluationService ruleEvaluationService,
         IReadingClassificationService classificationService,
         ISustainedAboveProcessor sustainedAboveProcessor,
+        IRuleApplicabilityChecker applicabilityChecker,
         AlertCooldownPolicy alertCooldownPolicy,
         AlertDeduplicator alertDeduplicator)
     {
         _ruleEvaluationService = ruleEvaluationService;
         _classificationService = classificationService;
         _sustainedAboveProcessor = sustainedAboveProcessor;
+        _applicabilityChecker = applicabilityChecker;
         _alertCooldownPolicy = alertCooldownPolicy;
         _alertDeduplicator = alertDeduplicator;
     }
@@ -63,9 +67,9 @@ public sealed class ReadingProcessingService
 
             foreach (var rule in ruleList)
             {
-                if (!rule.Enabled ||
+                if (
                     rule.Operator != RuleOperatorType.SustainedAbove ||
-                    !IsApplicable(reading, rule))
+                    !_applicabilityChecker.IsApplicable(reading, rule))
                 {
                     continue;
                 }
@@ -111,24 +115,5 @@ public sealed class ReadingProcessingService
         }
 
         alerts.Add(alert);
-    }
-
-    private static bool IsApplicable(
-        SensorReading reading,
-        Rule rule)
-    {
-        if (!string.Equals(
-                reading.Metric,
-                rule.Metric,
-                StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return rule.DeviceId is null ||
-               string.Equals(
-                   reading.DeviceId,
-                   rule.DeviceId,
-                   StringComparison.Ordinal);
     }
 }

@@ -112,6 +112,7 @@ public sealed class ReadingProcessingServiceAlertingTests
                     })),
             new ReadingClassificationService(),
             new SustainedAboveProcessor(),
+            new RuleApplicabilityChecker(),
             new AlertCooldownPolicy(
                 TimeSpan.FromMinutes(5)),
             new AlertDeduplicator());

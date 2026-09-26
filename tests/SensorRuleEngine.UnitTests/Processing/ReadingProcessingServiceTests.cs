@@ -230,6 +230,7 @@ public sealed class ReadingProcessingServiceTests
                     })),
             new ReadingClassificationService(),
             new SustainedAboveProcessor(),
+            new RuleApplicabilityChecker(),
             new AlertCooldownPolicy(
                 TimeSpan.FromMinutes(5)),
             new AlertDeduplicator());

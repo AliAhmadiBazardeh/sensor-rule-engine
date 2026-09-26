@@ -1,6 +1,5 @@
 using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
-using SensorRuleEngine.Domain.Rules;
 
 namespace SensorRuleEngine.Domain.Rules;
 

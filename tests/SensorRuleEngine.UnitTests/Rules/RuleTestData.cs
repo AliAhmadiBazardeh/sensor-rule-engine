@@ -19,15 +19,18 @@ internal static class RuleTestData
 
     public static Rule CreateRule(
         RuleOperatorType operatorType,
-        Dictionary<string, decimal> parameters)
+        Dictionary<string, decimal> parameters,
+        string metric = "temperature",
+        string? deviceId = "PUMP-01",
+        bool enabled = true)
     {
         return new Rule
         {
             Id = "test-rule",
             Name = "Test Rule",
-            Enabled = true,
-            Metric = "temperature",
-            DeviceId = "PUMP-01",
+            Enabled = enabled,
+            Metric = metric,
+            DeviceId = deviceId,
             Operator = operatorType,
             Parameters = parameters
         };

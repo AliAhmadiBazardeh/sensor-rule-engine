@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SensorRuleEngine.Application.Persistence;
 using SensorRuleEngine.Infrastructure.Persistence;
+using SensorRuleEngine.Infrastructure.Persistence.Repositories;
 
 namespace SensorRuleEngine.Infrastructure;
 
@@ -18,6 +20,10 @@ public static class DependencyInjection
 
         services.AddDbContext<SensorRuleEngineDbContext>(options =>
             options.UseSqlite(connectionString));
+        
+        services.AddScoped<IReadingRepository, ReadingRepository>();
+        services.AddScoped<IRuleResultRepository, RuleResultRepository>();
+        services.AddScoped<IAlertRepository, AlertRepository>();
 
         return services;
     }

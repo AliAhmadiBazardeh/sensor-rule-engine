@@ -4,7 +4,7 @@ namespace SensorRuleEngine.Application.Persistence;
 
 public interface IProcessingPersistence
 {
-    Task PersistAsync(
+    Task<PersistenceResult> PersistAsync(
         ReadingProcessingResult result,
         CancellationToken cancellationToken = default);
 }

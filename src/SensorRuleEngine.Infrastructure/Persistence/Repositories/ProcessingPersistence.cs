@@ -23,10 +23,14 @@ public sealed class ProcessingPersistence : IProcessingPersistence
         _unitOfWork = unitOfWork;
     }
     
-    public async Task PersistAsync(
+    public async Task<PersistenceResult> PersistAsync(
         ReadingProcessingResult result,
         CancellationToken cancellationToken = default)
     {
+        var readingsStored = 0;
+        var ruleResultsStored = 0;
+        var alertsStored = 0;
+        
         var readingKeys = result.ProcessedReadings
             .Select(reading => new ReadingKey(
                 reading.DeviceId,
@@ -56,6 +60,8 @@ public sealed class ProcessingPersistence : IProcessingPersistence
             await _readingRepository.AddAsync(
                 reading,
                 cancellationToken);
+            
+            readingsStored++;
         }
 
         var existingRuleResultKeys =
@@ -81,6 +87,8 @@ public sealed class ProcessingPersistence : IProcessingPersistence
             await _ruleResultRepository.AddAsync(
                 ruleResult,
                 cancellationToken);
+            
+            ruleResultsStored++;
         }
 
         var existingAlertKeys =
@@ -106,9 +114,18 @@ public sealed class ProcessingPersistence : IProcessingPersistence
             await _alertRepository.AddAsync(
                 alert,
                 cancellationToken);
+            
+            alertsStored++;
         }
 
         await _unitOfWork.SaveChangesAsync(
             cancellationToken);
+        
+        return new PersistenceResult
+        {
+            ReadingsStored = readingsStored,
+            RuleResultsStored = ruleResultsStored,
+            AlertsStored = alertsStored
+        };
     }
 }

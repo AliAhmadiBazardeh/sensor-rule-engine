@@ -45,14 +45,17 @@ public sealed class ReadingProcessingService
         var ruleList = rules.ToList();
 
         var classifications = new List<ReadingClassification>();
+        var allRuleResults = new List<RuleResult>();
         var alerts = new List<Alert>();
 
         foreach (var reading in orderedReadings)
         {
-            var ruleResults =
+            var readingRuleResults =
                 _ruleEvaluationService.Evaluate(
                     reading,
                     ruleList);
+
+            allRuleResults.AddRange(readingRuleResults);
 
             var classification =
                 _classificationService.Classify(
@@ -61,7 +64,7 @@ public sealed class ReadingProcessingService
                         reading.Metric,
                         reading.Timestamp,
                         reading.Sequence),
-                    ruleResults);
+                    readingRuleResults);
 
             classifications.Add(classification);
 
@@ -94,6 +97,7 @@ public sealed class ReadingProcessingService
         return new ReadingProcessingResult
         {
             ProcessedReadings = orderedReadings,
+            RuleResults = allRuleResults,
             Classifications = classifications,
             Alerts = alerts
         };

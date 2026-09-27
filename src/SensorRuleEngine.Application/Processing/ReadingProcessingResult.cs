@@ -6,6 +6,8 @@ namespace SensorRuleEngine.Application.Processing;
 public sealed class ReadingProcessingResult
 {
     public required IReadOnlyList<SensorReading> ProcessedReadings { get; init; }
+    
+    public required IReadOnlyList<RuleResult> RuleResults { get; init; }
 
     public required IReadOnlyList<ReadingClassification> Classifications { get; init; }
 

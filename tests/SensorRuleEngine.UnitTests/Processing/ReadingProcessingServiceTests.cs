@@ -87,7 +87,68 @@ public sealed class ReadingProcessingServiceTests
         Assert.Single(classification.Violations);
         Assert.Equal("rule-1", classification.Violations[0].RuleId);
     }
+    
+    [Fact]
+    public void Process_ShouldKeepAllEvaluatedRuleResults()
+    {
+        var service = CreateService();
 
+        var reading = CreateReading(
+            "2026-01-01T00:00:00Z",
+            105);
+
+        var rules = new[]
+        {
+            new Rule
+            {
+                Id = "rule-1",
+                Name = "Upper threshold",
+                Enabled = true,
+                Metric = "temperature",
+                Operator = RuleOperatorType.GreaterThan,
+                Parameters = new Dictionary<string, decimal>
+                {
+                    ["threshold"] = 100
+                }
+            },
+            new Rule
+            {
+                Id = "rule-2",
+                Name = "Lower threshold",
+                Enabled = true,
+                Metric = "temperature",
+                Operator = RuleOperatorType.GreaterThan,
+                Parameters = new Dictionary<string, decimal>
+                {
+                    ["threshold"] = 110
+                }
+            }
+        };
+
+        var result = service.Process(
+            new[] { reading },
+            rules);
+
+        Assert.Equal(2, result.RuleResults.Count);
+
+        Assert.Contains(
+            result.RuleResults,
+            ruleResult =>
+                ruleResult.RuleId == "rule-1" &&
+                ruleResult.Status == RuleResultStatus.Violated);
+
+        Assert.Contains(
+            result.RuleResults,
+            ruleResult =>
+                ruleResult.RuleId == "rule-2" &&
+                ruleResult.Status == RuleResultStatus.Satisfied);
+        
+        var classification = Assert.Single(result.Classifications);
+
+        Assert.Single(classification.Violations);
+        Assert.Equal("rule-1", classification.Violations[0].RuleId);
+    }
+    
     [Fact]
     public void Process_ShouldSendSustainedAboveToStatefulProcessor()
     {

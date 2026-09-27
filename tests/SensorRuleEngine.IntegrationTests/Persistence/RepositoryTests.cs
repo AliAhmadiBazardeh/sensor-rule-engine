@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using SensorRuleEngine.Application.Processing;
+using SensorRuleEngine.Domain.Classification;
 using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
 using SensorRuleEngine.Domain.ValueObjects;
@@ -222,5 +224,87 @@ public sealed class RepositoryTests
             alert.PeakValue,
             storedAlert.PeakValue);
     }
-   
+    
+    [Fact]
+    public async Task ProcessingPersistence_ShouldBeIdempotent_WhenSameResultIsPersistedTwice()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        var options =
+            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using var dbContext =
+            new SensorRuleEngineDbContext(options);
+
+        await dbContext.Database.MigrateAsync();
+
+        var persistence =
+            new ProcessingPersistence(
+                new ReadingRepository(dbContext),
+                new RuleResultRepository(dbContext),
+                new AlertRepository(dbContext),
+                dbContext);
+
+        var reading = new SensorReading
+        {
+            DeviceId = "device-1",
+            Metric = "temperature",
+            Timestamp = DateTimeOffset.Parse(
+                "2026-01-01T00:00:00Z"),
+            Value = 105,
+            Sequence = 1
+        };
+
+        var readingKey = new ReadingKey(
+            reading.DeviceId,
+            reading.Metric,
+            reading.Timestamp,
+            reading.Sequence);
+
+        var ruleResult = new RuleResult
+        {
+            RuleId = "rule-1",
+            ReadingKey = readingKey,
+            Status = RuleResultStatus.Violated,
+            Reason = "Value exceeded threshold."
+        };
+
+        var alert = new Alert
+        {
+            RuleId = "sustained-1",
+            DeviceId = reading.DeviceId,
+            Metric = reading.Metric,
+            StartTimestamp = reading.Timestamp,
+            EndTimestamp = reading.Timestamp.AddMinutes(2),
+            PeakValue = 110
+        };
+
+        var result = new ReadingProcessingResult
+        {
+            ProcessedReadings = new[] { reading },
+            RuleResults = new[] { ruleResult },
+            Classifications = Array.Empty<ReadingClassification>(),
+            Alerts = new[] { alert }
+        };
+
+        await persistence.PersistAsync(result);
+        await persistence.PersistAsync(result);
+
+        Assert.Equal(
+            1,
+            await dbContext.Readings.CountAsync());
+
+        Assert.Equal(
+            1,
+            await dbContext.RuleResults.CountAsync());
+
+        Assert.Equal(
+            1,
+            await dbContext.Alerts.CountAsync());
+    }
 }

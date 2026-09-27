@@ -24,7 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IReadingRepository, ReadingRepository>();
         services.AddScoped<IRuleResultRepository, RuleResultRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
-
+        services.AddScoped<IProcessingPersistence, ProcessingPersistence>();
+        
         return services;
     }
 }

@@ -26,4 +26,85 @@ public sealed class RuleResultRepository
             entity,
             cancellationToken);
     }
+    
+    public async Task<IReadOnlySet<string>> GetExistingKeysAsync(
+    IReadOnlyCollection<RuleResult> results,
+    CancellationToken cancellationToken = default)
+    {
+        if (results.Count == 0)
+        {
+            return new HashSet<string>();
+        }
+
+        var ruleIds = results
+            .Select(result => result.RuleId)
+            .Distinct()
+            .ToList();
+
+        var deviceIds = results
+            .Select(result => result.ReadingKey.DeviceId)
+            .Distinct()
+            .ToList();
+
+        var metrics = results
+            .Select(result => result.ReadingKey.Metric)
+            .Distinct()
+            .ToList();
+
+        var timestamps = results
+            .Select(result => result.ReadingKey.Timestamp)
+            .Distinct()
+            .ToList();
+
+        var sequences = results
+            .Select(result => result.ReadingKey.Sequence)
+            .Distinct()
+            .ToList();
+
+        var existingResults =
+            await _dbContext.RuleResults
+                .AsNoTracking()
+                .Where(result =>
+                    ruleIds.Contains(result.RuleId) &&
+                    deviceIds.Contains(result.DeviceId) &&
+                    metrics.Contains(result.Metric) &&
+                    timestamps.Contains(result.Timestamp) &&
+                    sequences.Contains(result.Sequence))
+                .Select(result => new
+                {
+                    result.RuleId,
+                    result.DeviceId,
+                    result.Metric,
+                    result.Timestamp,
+                    result.Sequence
+                })
+                .ToListAsync(cancellationToken);
+
+        return existingResults
+            .Select(result =>
+                CreateKey(
+                    result.RuleId,
+                    result.DeviceId,
+                    result.Metric,
+                    result.Timestamp,
+                    result.Sequence))
+            .ToHashSet();
+    }
+
+    private static string CreateKey(
+        string ruleId,
+        string deviceId,
+        string metric,
+        DateTimeOffset timestamp,
+        int sequence)
+    {
+        return string.Join(
+            "|",
+            ruleId,
+            deviceId,
+            metric,
+            timestamp,
+            sequence);
+    }
+    
 }

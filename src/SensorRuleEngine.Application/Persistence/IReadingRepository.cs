@@ -7,6 +7,7 @@ public interface IReadingRepository
 {
     Task AddAsync(
         SensorReading reading,
+        bool isAcceptable,
         CancellationToken cancellationToken = default);
     
     Task<IReadOnlySet<ReadingKey>> GetExistingKeysAsync(

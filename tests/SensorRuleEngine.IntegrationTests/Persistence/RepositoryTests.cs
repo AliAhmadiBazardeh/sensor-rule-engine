@@ -44,8 +44,10 @@ public sealed class RepositoryTests
             Sequence = 1
         };
 
-        await repository.AddAsync(reading);
-
+        await repository.AddAsync(
+            reading,
+            true);
+        
         await dbContext.SaveChangesAsync();
 
         var persisted = await dbContext.Readings.SingleAsync();
@@ -74,6 +76,53 @@ public sealed class RepositoryTests
         Assert.Equal(
             reading.Sequence,
             storedReading.Sequence);
+        
+        Assert.True(
+            storedReading.IsAcceptable);
+    }
+    
+    [Fact]
+    public async Task ReadingRepository_ShouldPersistUnacceptableReading()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        var options =
+            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using var dbContext =
+            new SensorRuleEngineDbContext(options);
+
+        await dbContext.Database.MigrateAsync();
+
+        var repository =
+            new ReadingRepository(dbContext);
+
+        var reading = new SensorReading
+        {
+            DeviceId = "device-1",
+            Metric = "temperature",
+            Timestamp = DateTimeOffset.Parse(
+                "2026-01-01T10:00:00Z"),
+            Value = 105,
+            Sequence = 1
+        };
+
+        await repository.AddAsync(
+            reading,
+            false);
+
+        await dbContext.SaveChangesAsync();
+
+        var storedReading =
+            await dbContext.Readings.SingleAsync();
+
+        Assert.False(
+            storedReading.IsAcceptable);
     }
     
     [Fact]
@@ -288,7 +337,18 @@ public sealed class RepositoryTests
         {
             ProcessedReadings = new[] { reading },
             RuleResults = new[] { ruleResult },
-            Classifications = Array.Empty<ReadingClassification>(),
+            Classifications = new[]
+            {
+                new ReadingClassification
+                {
+                    ReadingKey = new ReadingKey(
+                        reading.DeviceId,
+                        reading.Metric,
+                        reading.Timestamp,
+                        reading.Sequence),
+                    Status = ReadingClassificationStatus.Acceptable
+                }
+            },
             Alerts = new[] { alert }
         };
 
@@ -298,6 +358,12 @@ public sealed class RepositoryTests
         Assert.Equal(
             1,
             await dbContext.Readings.CountAsync());
+        
+        var storedReading =
+            await dbContext.Readings.SingleAsync();
+
+        Assert.True(
+            storedReading.IsAcceptable);
 
         Assert.Equal(
             1,

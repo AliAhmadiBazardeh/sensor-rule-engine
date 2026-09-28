@@ -13,4 +13,5 @@ public sealed class ReadingEntity
     public decimal Value { get; set; }
 
     public int Sequence { get; set; }
+    public bool IsAcceptable { get; set; }
 }

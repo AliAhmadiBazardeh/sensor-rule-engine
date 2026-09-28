@@ -6,7 +6,8 @@ namespace SensorRuleEngine.Infrastructure.Persistence.Mappers;
 internal static class ReadingMapper
 {
     public static ReadingEntity ToEntity(
-        SensorReading reading)
+        SensorReading reading,
+        bool isAcceptable)
     {
         return new ReadingEntity
         {
@@ -14,7 +15,8 @@ internal static class ReadingMapper
             Metric = reading.Metric,
             Timestamp = reading.Timestamp,
             Value = reading.Value,
-            Sequence = reading.Sequence
+            Sequence = reading.Sequence,
+            IsAcceptable = isAcceptable
         };
     }
 }

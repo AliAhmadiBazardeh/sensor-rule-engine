@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SensorRuleEngine.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SensorRuleEngine.Infrastructure.Persistence;
 namespace SensorRuleEngine.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SensorRuleEngineDbContext))]
-    partial class SensorRuleEngineDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260928060711_AddReadingAcceptableStatus")]
+    partial class AddReadingAcceptableStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.20");

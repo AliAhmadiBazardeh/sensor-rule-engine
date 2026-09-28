@@ -1,5 +1,6 @@
 using SensorRuleEngine.Application.Persistence;
 using SensorRuleEngine.Application.Processing;
+using SensorRuleEngine.Domain.Classification;
 using SensorRuleEngine.Domain.ValueObjects;
 
 namespace SensorRuleEngine.Infrastructure.Persistence.Repositories;
@@ -27,6 +28,10 @@ public sealed class ProcessingPersistence : IProcessingPersistence
         ReadingProcessingResult result,
         CancellationToken cancellationToken = default)
     {
+        var classificationsByReadingKey =
+            result.Classifications.ToDictionary(
+                classification => classification.ReadingKey);
+        
         var readingsStored = 0;
         var ruleResultsStored = 0;
         var alertsStored = 0;
@@ -56,9 +61,17 @@ public sealed class ProcessingPersistence : IProcessingPersistence
             {
                 continue;
             }
+            
+            var classification =
+                classificationsByReadingKey[key];
 
+            var isAcceptable =
+                classification.Status ==
+                ReadingClassificationStatus.Acceptable;
+            
             await _readingRepository.AddAsync(
                 reading,
+                isAcceptable,
                 cancellationToken);
             
             readingsStored++;

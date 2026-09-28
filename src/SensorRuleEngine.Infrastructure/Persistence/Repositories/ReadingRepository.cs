@@ -18,9 +18,10 @@ public sealed class ReadingRepository : IReadingRepository
 
     public async Task AddAsync(
         SensorReading reading,
+        bool isAcceptable,
         CancellationToken cancellationToken = default)
     {
-        var entity = ReadingMapper.ToEntity(reading);
+        var entity = ReadingMapper.ToEntity(reading, isAcceptable);
 
         await _dbContext.Readings.AddAsync(
             entity,

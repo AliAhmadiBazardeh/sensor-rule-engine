@@ -20,4 +20,10 @@
     <ProjectReference Include="..\SensorRuleEngine.Infrastructure\SensorRuleEngine.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\data\rules.json"
+             Link="data\rules.json"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  
 </Project>

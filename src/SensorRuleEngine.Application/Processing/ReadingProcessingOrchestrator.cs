@@ -9,22 +9,21 @@ public sealed class ReadingProcessingOrchestrator
     : IReadingProcessingOrchestrator
 {
     private readonly IReadingIngestionService _ingestionService;
-    private readonly IRuleLoader _ruleLoader;
+    private readonly IRuleProvider _ruleProvider;
     private readonly IReadingBatchProcessor _batchProcessor;
 
     public ReadingProcessingOrchestrator(
         IReadingIngestionService ingestionService,
-        IRuleLoader ruleLoader,
-        IReadingBatchProcessor batchProcessor)
+        IReadingBatchProcessor batchProcessor,
+        IRuleProvider ruleProvider)
     {
         _ingestionService = ingestionService;
-        _ruleLoader = ruleLoader;
+        _ruleProvider = ruleProvider;
         _batchProcessor = batchProcessor;
     }
 
     public async Task<ProcessingReport> ProcessAsync(
         Stream input,
-        Stream rulesInput,
         CancellationToken cancellationToken = default)
     {
         var ingestionResult =
@@ -32,14 +31,11 @@ public sealed class ReadingProcessingOrchestrator
                 input,
                 cancellationToken);
         
-        var ruleResult =
-            await _ruleLoader.LoadAsync(
-                rulesInput,
-                cancellationToken);
+        var rules = _ruleProvider.GetRules();
 
         return await _batchProcessor.ProcessAsync(
             ingestionResult.Readings,
-            ruleResult.Rules,
+            rules,
             ingestionResult.TotalLines,
             ingestionResult.Parsed,
             ingestionResult.Invalid,

@@ -84,6 +84,38 @@ builder.Services.AddScoped<
     IRuleLoader,
     JsonRuleLoader>();
 
+var ruleLoader = new JsonRuleLoader(
+    new RuleValidator());
+
+var rulesPath = Path.Combine(
+    AppContext.BaseDirectory,
+    "data",
+    "rules.json");
+
+if (!File.Exists(rulesPath))
+{
+    throw new FileNotFoundException(
+        "The rules.json file was not found.",
+        rulesPath);
+}
+
+await using var rulesStream =
+    File.OpenRead(rulesPath);
+
+var ruleLoadResult =
+    await ruleLoader.LoadAsync(rulesStream);
+
+if (ruleLoadResult.InvalidRules > 0)
+{
+    throw new InvalidOperationException(
+        $"rules.json contains " +
+        $"{ruleLoadResult.InvalidRules} invalid rule(s).");
+}
+
+builder.Services.AddSingleton<IRuleProvider>(
+    new InMemoryRuleProvider(
+        ruleLoadResult.Rules));
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

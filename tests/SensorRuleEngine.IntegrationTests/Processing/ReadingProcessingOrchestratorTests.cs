@@ -3,6 +3,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SensorRuleEngine.Application.Ingestion;
 using SensorRuleEngine.Application.Processing;
+using SensorRuleEngine.Application.Rules;
+using SensorRuleEngine.Domain.Entities;
+using SensorRuleEngine.Domain.Enums;
 using SensorRuleEngine.Domain.Readings;
 using SensorRuleEngine.Domain.Rules;
 using SensorRuleEngine.Infrastructure.Persistence;
@@ -58,15 +61,31 @@ public sealed class ReadingProcessingOrchestratorTests
                 new JsonlReadingParser(),
                 new SensorReadingValidator());
         
-        var ruleLoader =
-            new JsonRuleLoader(
-                new RuleValidator());
+        var rule = new Rule
+        {
+            Id = "temperature-rule",
+            Name = "High Temperature",
+            Enabled = true,
+            Metric = "temperature",
+            Operator = RuleOperatorType.GreaterThan,
+            Parameters = new Dictionary<string, decimal>
+            {
+                ["threshold"] = 30
+            }
+        };
+        
+        var ruleProvider =
+            new InMemoryRuleProvider(
+                new[]
+                {
+                    rule
+                });
         
         var orchestrator =
             new ReadingProcessingOrchestrator(
                 ingestionService,
-                ruleLoader,
-                batchProcessor);
+                batchProcessor,
+                ruleProvider);
 
         const string jsonl =
             """
@@ -99,8 +118,7 @@ public sealed class ReadingProcessingOrchestratorTests
         
         var report =
             await orchestrator.ProcessAsync(
-                stream,
-                rulesStream);
+                stream);
         
         Assert.Equal(4, report.TotalLines);
         Assert.Equal(3, report.Parsed);

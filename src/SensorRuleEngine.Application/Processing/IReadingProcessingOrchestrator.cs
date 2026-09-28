@@ -5,7 +5,6 @@ namespace SensorRuleEngine.Application.Processing;
 public interface IReadingProcessingOrchestrator
 {
     Task<ProcessingReport> ProcessAsync(
-        Stream readingsInput,
-        Stream rulesInput,
+        Stream input,
         CancellationToken cancellationToken = default);
 }

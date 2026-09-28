@@ -7,11 +7,11 @@ namespace SensorRuleEngine.Application.Processing;
 
 public sealed class ReadingBatchProcessor : IReadingBatchProcessor
 {
-    private readonly ReadingProcessingService _readingProcessingService;
+    private readonly IReadingProcessingService _readingProcessingService;
     private readonly IProcessingPersistence _processingPersistence;
 
     public ReadingBatchProcessor(
-        ReadingProcessingService readingProcessingService,
+        IReadingProcessingService readingProcessingService,
         IProcessingPersistence processingPersistence)
     {
         _readingProcessingService = readingProcessingService;

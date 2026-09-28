@@ -1,3 +1,4 @@
+using SensorRuleEngine.Api.Startup;
 using SensorRuleEngine.Application.Ingestion;
 using SensorRuleEngine.Application.Processing;
 using SensorRuleEngine.Application.Rules;
@@ -29,6 +30,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IReadingProcessingOrchestrator,
     ReadingProcessingOrchestrator>();
+
+builder.Services.AddHostedService<
+    ReadingProcessingHostedService>();
 
 builder.Services.AddScoped<
     IRuleApplicabilityChecker,
@@ -107,9 +111,15 @@ var ruleLoadResult =
 
 if (ruleLoadResult.InvalidRules > 0)
 {
+    var errors = string.Join(
+        Environment.NewLine,
+        ruleLoadResult.Errors);
+
     throw new InvalidOperationException(
         $"rules.json contains " +
-        $"{ruleLoadResult.InvalidRules} invalid rule(s).");
+        $"{ruleLoadResult.InvalidRules} invalid rule(s)." +
+        Environment.NewLine +
+        errors);
 }
 
 builder.Services.AddSingleton<IRuleProvider>(

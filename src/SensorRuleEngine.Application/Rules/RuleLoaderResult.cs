@@ -9,4 +9,7 @@ public sealed class RuleLoaderResult
     public int TotalRules { get; init; }
 
     public int InvalidRules { get; init; }
+
+    public IReadOnlyList<string> Errors { get; init; }
+        = Array.Empty<string>();
 }

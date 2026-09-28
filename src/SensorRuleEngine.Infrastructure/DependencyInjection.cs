@@ -23,6 +23,9 @@ public static class DependencyInjection
         services.AddDbContext<SensorRuleEngineDbContext>(options =>
             options.UseSqlite(connectionString));
         
+        services.AddScoped<IUnitOfWork>(
+            sp => sp.GetRequiredService<SensorRuleEngineDbContext>());
+        
         services.AddScoped<IReadingRepository, ReadingRepository>();
         services.AddScoped<IRuleResultRepository, RuleResultRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();

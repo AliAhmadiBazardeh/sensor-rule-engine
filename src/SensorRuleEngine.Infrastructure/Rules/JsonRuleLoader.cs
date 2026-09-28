@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using SensorRuleEngine.Application.Rules;
 using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
@@ -41,13 +40,17 @@ public sealed class JsonRuleLoader : IRuleLoader
                 json,
                 _jsonOptions);
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
             return new RuleLoaderResult
             {
                 Rules = Array.Empty<Rule>(),
                 TotalRules = 0,
-                InvalidRules = 1
+                InvalidRules = 1,
+                Errors = new[]
+                {
+                    $"Invalid JSON: {ex.Message}"
+                }
             };
         }
 
@@ -57,18 +60,26 @@ public sealed class JsonRuleLoader : IRuleLoader
             {
                 Rules = Array.Empty<Rule>(),
                 TotalRules = 0,
-                InvalidRules = 1
+                InvalidRules = 1,
+                Errors = new[]
+                {
+                    "rules.json does not contain a valid rule array."
+                }
             };
         }
 
         var rules = new List<Rule>();
-        var invalidRules = 0;
+        var errors = new List<string>();
 
-        foreach (var dto in dtos)
+        for (var index = 0; index < dtos.Count; index++)
         {
-            if (!TryMap(dto, out var rule))
+            var dto = dtos[index];
+
+            if (!TryMap(dto, out var rule, out var mappingError))
             {
-                invalidRules++;
+                errors.Add(
+                    $"Rule at index {index}: {mappingError}");
+
                 continue;
             }
 
@@ -77,7 +88,12 @@ public sealed class JsonRuleLoader : IRuleLoader
 
             if (!validationResult.IsValid)
             {
-                invalidRules++;
+                foreach (var error in validationResult.Errors)
+                {
+                    errors.Add(
+                        $"Rule '{rule.Id}': {error}");
+                }
+
                 continue;
             }
 
@@ -88,18 +104,42 @@ public sealed class JsonRuleLoader : IRuleLoader
         {
             Rules = rules,
             TotalRules = dtos.Count,
-            InvalidRules = invalidRules
+            InvalidRules = errors.Count == 0
+                ? 0
+                : dtos.Count - rules.Count,
+            Errors = errors
         };
     }
 
     private static bool TryMap(
         RuleDto dto,
-        out Rule rule)
+        out Rule rule,
+        out string error)
     {
         rule = null!;
+        error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(dto.Id))
+        {
+            error = "Rule id is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+        {
+            error = "Rule name is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Metric))
+        {
+            error = "Rule metric is required.";
+            return false;
+        }
 
         if (string.IsNullOrWhiteSpace(dto.Operator))
         {
+            error = "Rule operator is required.";
             return false;
         }
 
@@ -108,6 +148,9 @@ public sealed class JsonRuleLoader : IRuleLoader
                 ignoreCase: true,
                 out var operatorType))
         {
+            error =
+                $"Unsupported operator '{dto.Operator}'.";
+
             return false;
         }
 
@@ -136,13 +179,6 @@ public sealed class JsonRuleLoader : IRuleLoader
         {
             parameters["durationSeconds"] =
                 dto.DurationSeconds.Value;
-        }
-
-        if (string.IsNullOrWhiteSpace(dto.Id) ||
-            string.IsNullOrWhiteSpace(dto.Name) ||
-            string.IsNullOrWhiteSpace(dto.Metric))
-        {
-            return false;
         }
 
         rule = new Rule

@@ -21,12 +21,22 @@ public sealed class AggregationQueryValidator
         {
             errors.Add("'from' must be earlier than 'to'.");
         }
+        
+        if (query.From.Offset != TimeSpan.Zero)
+        {
+            errors.Add("'from' must be UTC.");
+        }
+
+        if (query.To.Offset != TimeSpan.Zero)
+        {
+            errors.Add("'to' must be UTC.");
+        }
 
         if (query.BucketSeconds <= 0)
         {
             errors.Add("bucketSeconds must be greater than zero.");
         }
-
+        
         return errors;
     }
 }

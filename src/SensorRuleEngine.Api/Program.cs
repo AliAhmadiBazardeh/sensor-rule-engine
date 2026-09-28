@@ -1,4 +1,5 @@
 using SensorRuleEngine.Api.Startup;
+using SensorRuleEngine.Application.Aggregation;
 using SensorRuleEngine.Application.Ingestion;
 using SensorRuleEngine.Application.Processing;
 using SensorRuleEngine.Application.Rules;
@@ -125,6 +126,12 @@ if (ruleLoadResult.InvalidRules > 0)
 builder.Services.AddSingleton<IRuleProvider>(
     new InMemoryRuleProvider(
         ruleLoadResult.Rules));
+
+builder.Services.AddScoped<AggregationQueryValidator>();
+
+builder.Services.AddScoped<
+    IAggregationService,
+    AggregationService>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

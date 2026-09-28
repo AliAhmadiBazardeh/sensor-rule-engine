@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IReadingRepository, ReadingRepository>();
         services.AddScoped<IRuleResultRepository, RuleResultRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
+        services.AddScoped<IAggregationRepository, AggregationRepository>();
         services.AddScoped<IProcessingPersistence, ProcessingPersistence>();
         services.AddScoped<IRuleLoader, JsonRuleLoader>();
         

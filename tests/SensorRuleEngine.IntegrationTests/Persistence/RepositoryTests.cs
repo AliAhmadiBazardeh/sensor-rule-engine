@@ -6,6 +6,7 @@ using SensorRuleEngine.Domain.Entities;
 using SensorRuleEngine.Domain.Enums;
 using SensorRuleEngine.Domain.ValueObjects;
 using SensorRuleEngine.Infrastructure.Persistence;
+using SensorRuleEngine.Infrastructure.Persistence.Entities;
 using SensorRuleEngine.Infrastructure.Persistence.Repositories;
 using Xunit;
 
@@ -372,5 +373,145 @@ public sealed class RepositoryTests
         Assert.Equal(
             1,
             await dbContext.Alerts.CountAsync());
+    }
+    
+    [Fact]
+    public async Task AggregationRepository_ShouldReturnOnlyAcceptableReadings()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        var options =
+            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using var dbContext =
+            new SensorRuleEngineDbContext(options);
+
+        await dbContext.Database.MigrateAsync();
+
+        var repository =
+            new AggregationRepository(dbContext);
+
+        var from =
+            DateTimeOffset.Parse("2026-01-01T10:00:00Z");
+
+        var to =
+            DateTimeOffset.Parse("2026-01-01T11:00:00Z");
+
+        dbContext.Readings.AddRange(
+            new ReadingEntity
+            {
+                DeviceId = "device-1",
+                Metric = "temperature",
+                Timestamp = DateTimeOffset.Parse(
+                    "2026-01-01T10:10:00Z"),
+                Value = 75,
+                Sequence = 1,
+                IsAcceptable = true
+            },
+            new ReadingEntity
+            {
+                DeviceId = "device-1",
+                Metric = "temperature",
+                Timestamp = DateTimeOffset.Parse(
+                    "2026-01-01T10:20:00Z"),
+                Value = 105,
+                Sequence = 2,
+                IsAcceptable = false
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var readings =
+            await repository.GetAcceptableReadingsAsync(
+                "device-1",
+                "temperature",
+                from,
+                to);
+
+        Assert.Single(readings);
+
+        var reading = readings[0];
+
+        Assert.Equal("device-1", reading.DeviceId);
+        Assert.Equal("temperature", reading.Metric);
+        Assert.Equal(75, reading.Value);
+        Assert.Equal(1, reading.Sequence);
+    }
+    
+    [Fact]
+    public async Task AggregationRepository_ShouldUseHalfOpenTimeRange()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        var options =
+            new DbContextOptionsBuilder<SensorRuleEngineDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using var dbContext =
+            new SensorRuleEngineDbContext(options);
+
+        await dbContext.Database.MigrateAsync();
+
+        var repository =
+            new AggregationRepository(dbContext);
+
+        var from =
+            DateTimeOffset.Parse("2026-01-01T10:00:00Z");
+
+        var to =
+            DateTimeOffset.Parse("2026-01-01T11:00:00Z");
+
+        dbContext.Readings.AddRange(
+            new ReadingEntity
+            {
+                DeviceId = "device-1",
+                Metric = "temperature",
+                Timestamp = from,
+                Value = 70,
+                Sequence = 1,
+                IsAcceptable = true
+            },
+            new ReadingEntity
+            {
+                DeviceId = "device-1",
+                Metric = "temperature",
+                Timestamp = DateTimeOffset.Parse(
+                    "2026-01-01T10:30:00Z"),
+                Value = 75,
+                Sequence = 2,
+                IsAcceptable = true
+            },
+            new ReadingEntity
+            {
+                DeviceId = "device-1",
+                Metric = "temperature",
+                Timestamp = to,
+                Value = 80,
+                Sequence = 3,
+                IsAcceptable = true
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var readings =
+            await repository.GetAcceptableReadingsAsync(
+                "device-1",
+                "temperature",
+                from,
+                to);
+
+        Assert.Equal(2, readings.Count);
+
+        Assert.Equal(70, readings[0].Value);
+        Assert.Equal(75, readings[1].Value);
     }
 }

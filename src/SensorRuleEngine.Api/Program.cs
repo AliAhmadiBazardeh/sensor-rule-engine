@@ -162,8 +162,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
-
 app.MapGet(
         "/api/v1/aggregation",
         async (
@@ -206,3 +204,7 @@ app.MapGet(
     .WithTags("Aggregation");
 
 app.Run();
+
+public partial class Program
+{
+}

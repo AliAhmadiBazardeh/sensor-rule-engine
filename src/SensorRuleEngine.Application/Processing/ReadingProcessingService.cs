@@ -9,7 +9,7 @@ using SensorRuleEngine.Domain.ValueObjects;
 
 namespace SensorRuleEngine.Application.Processing;
 
-public sealed class ReadingProcessingService
+public sealed class ReadingProcessingService : IReadingProcessingService
 {
     private readonly IRuleEvaluationService _ruleEvaluationService;
     private readonly IReadingClassificationService _classificationService;

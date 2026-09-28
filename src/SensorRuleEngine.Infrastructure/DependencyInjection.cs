@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SensorRuleEngine.Application.Persistence;
+using SensorRuleEngine.Application.Rules;
 using SensorRuleEngine.Infrastructure.Persistence;
 using SensorRuleEngine.Infrastructure.Persistence.Repositories;
+using SensorRuleEngine.Infrastructure.Rules;
 
 namespace SensorRuleEngine.Infrastructure;
 
@@ -25,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IRuleResultRepository, RuleResultRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
         services.AddScoped<IProcessingPersistence, ProcessingPersistence>();
+        services.AddScoped<IRuleLoader, JsonRuleLoader>();
         
         return services;
     }

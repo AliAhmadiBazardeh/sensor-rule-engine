@@ -1,9 +1,88 @@
+using SensorRuleEngine.Application.Ingestion;
+using SensorRuleEngine.Application.Processing;
+using SensorRuleEngine.Application.Rules;
+using SensorRuleEngine.Domain.Alerting;
+using SensorRuleEngine.Domain.Classification;
+using SensorRuleEngine.Domain.Readings;
+using SensorRuleEngine.Domain.Rules;
+using SensorRuleEngine.Domain.Rules.SustainedAbove;
 using SensorRuleEngine.Infrastructure;
+using SensorRuleEngine.Infrastructure.Rules;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(
     builder.Configuration);
+
+builder.Services.AddScoped<JsonlReadingParser>();
+builder.Services.AddScoped<SensorReadingValidator>();
+builder.Services.AddScoped<RuleValidator>();
+
+builder.Services.AddScoped<
+    IReadingIngestionService,
+    ReadingIngestionService>();
+
+builder.Services.AddScoped<
+    IReadingBatchProcessor,
+    ReadingBatchProcessor>();
+
+builder.Services.AddScoped<
+    IReadingProcessingOrchestrator,
+    ReadingProcessingOrchestrator>();
+
+builder.Services.AddScoped<
+    IRuleApplicabilityChecker,
+    RuleApplicabilityChecker>();
+
+builder.Services.AddScoped<
+    IReadingClassificationService,
+    ReadingClassificationService>();
+
+builder.Services.AddScoped<
+    ISustainedAboveProcessor,
+    SustainedAboveProcessor>();
+
+builder.Services.AddScoped<AlertDeduplicator>();
+
+builder.Services.AddScoped<AlertCooldownPolicy>(_ =>
+    new AlertCooldownPolicy(
+        TimeSpan.FromMinutes(5)));
+
+builder.Services.AddScoped<IRuleOperatorResolver>(sp =>
+{
+    var operators = new IRuleOperator[]
+    {
+        new GreaterThanOperator(),
+        new GreaterThanOrEqualOperator(),
+        new LessThanOperator(),
+        new LessThanOrEqualOperator(),
+        new EqualOperator(),
+        new BetweenOperator()
+    };
+
+    return new RuleOperatorResolver(operators);
+});
+
+builder.Services.AddScoped<IRuleEvaluationService>(sp =>
+{
+    var applicabilityChecker =
+        sp.GetRequiredService<IRuleApplicabilityChecker>();
+
+    var operatorResolver =
+        sp.GetRequiredService<IRuleOperatorResolver>();
+
+    return new RuleEvaluationService(
+        applicabilityChecker,
+        operatorResolver);
+});
+
+builder.Services.AddScoped<
+    IReadingProcessingService,
+    ReadingProcessingService>();
+
+builder.Services.AddScoped<
+    IRuleLoader,
+    JsonRuleLoader>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

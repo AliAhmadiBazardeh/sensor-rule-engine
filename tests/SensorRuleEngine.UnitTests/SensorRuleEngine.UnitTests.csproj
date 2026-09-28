@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SensorRuleEngine.Domain\SensorRuleEngine.Domain.csproj" />
     <ProjectReference Include="..\..\src\SensorRuleEngine.Application\SensorRuleEngine.Application.csproj" />
+    <ProjectReference Include="..\..\src\SensorRuleEngine.Infrastructure\SensorRuleEngine.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

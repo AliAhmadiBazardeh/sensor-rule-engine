@@ -1,12 +1,11 @@
-using SensorRuleEngine.Domain.Entities;
-using SensorRuleEngine.Domain.Rules;
+using SensorRuleEngine.Application.Rules;
 
 namespace SensorRuleEngine.Application.Processing;
 
 public interface IReadingProcessingOrchestrator
 {
     Task<ProcessingReport> ProcessAsync(
-        Stream input,
-        IEnumerable<Rule> rules,
+        Stream readingsInput,
+        Stream rulesInput,
         CancellationToken cancellationToken = default);
 }

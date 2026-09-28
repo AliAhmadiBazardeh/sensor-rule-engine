@@ -3,12 +3,11 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SensorRuleEngine.Application.Ingestion;
 using SensorRuleEngine.Application.Processing;
-using SensorRuleEngine.Domain.Entities;
-using SensorRuleEngine.Domain.Enums;
 using SensorRuleEngine.Domain.Readings;
 using SensorRuleEngine.Domain.Rules;
 using SensorRuleEngine.Infrastructure.Persistence;
 using SensorRuleEngine.Infrastructure.Persistence.Repositories;
+using SensorRuleEngine.Infrastructure.Rules;
 using SensorRuleEngine.IntegrationTests.Persistence;
 using Xunit;
 
@@ -58,10 +57,15 @@ public sealed class ReadingProcessingOrchestratorTests
             new ReadingIngestionService(
                 new JsonlReadingParser(),
                 new SensorReadingValidator());
-
+        
+        var ruleLoader =
+            new JsonRuleLoader(
+                new RuleValidator());
+        
         var orchestrator =
             new ReadingProcessingOrchestrator(
                 ingestionService,
+                ruleLoader,
                 batchProcessor);
 
         const string jsonl =
@@ -75,24 +79,29 @@ public sealed class ReadingProcessingOrchestratorTests
         await using var stream =
             new MemoryStream(Encoding.UTF8.GetBytes(jsonl));
 
-        var rule = new Rule
-        {
-            Id = "rule-1",
-            Name = "Temperature threshold",
-            Enabled = true,
-            Metric = "temperature",
-            Operator = RuleOperatorType.GreaterThan,
-            Parameters = new Dictionary<string, decimal>
-            {
-                ["threshold"] = 30m
-            }
-        };
-
+        const string rulesJson =
+            """
+            [
+              {
+                "id": "rule-1",
+                "name": "Temperature threshold",
+                "enabled": true,
+                "metric": "temperature",
+                "operator": "GreaterThan",
+                "threshold": 30
+              }
+            ]
+            """;
+        
+        await using var rulesStream =
+            new MemoryStream(
+                Encoding.UTF8.GetBytes(rulesJson));
+        
         var report =
             await orchestrator.ProcessAsync(
                 stream,
-                new[] { rule });
-
+                rulesStream);
+        
         Assert.Equal(4, report.TotalLines);
         Assert.Equal(3, report.Parsed);
         Assert.Equal(1, report.Invalid);
